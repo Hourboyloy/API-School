@@ -4,7 +4,7 @@ const usermodel = require("../modeling/user");
 const jwt = require("jsonwebtoken");
 
 const register = async (req, res) => {
-  const { username, email, password, role } = req.body;
+  const { username, email, password } = req.body;
 
   try {
     const existingUser = await usermodel.findOne({ email });
@@ -16,7 +16,7 @@ const register = async (req, res) => {
       username,
       email,
       password: hashedPassword,
-      role: role,
+      // role: role,
     });
 
     await newUser.save();

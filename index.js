@@ -6,6 +6,7 @@ const user_route = require("./src/route/user.route");
 const news_route = require("./src/route/news.route");
 const background_route = require("./src/route/background.route");
 const Categories = require("./src/route/categories.route");
+const ViewsAnalysis = require("./src/route/ViewsAnalysis.route");
 
 const app = express();
 
@@ -19,7 +20,7 @@ app.use(
     origin: "*",
     methods: "GET,POST,DELETE,PUT",
   })
-);  
+);
 
 // Basic health check endpoint
 app.get("/", (req, res) => {
@@ -28,14 +29,13 @@ app.get("/", (req, res) => {
 
 // Middleware and routes
 app.use(express.json());
-// app.use("/assets", express.static("assets"));
-// app.use("/bgimg", express.static("bgimg"));
 
 connection.mymongodb();
 user_route(app);
 news_route(app);
 background_route(app);
 Categories(app);
+ViewsAnalysis(app);
 
 // Start the server
 const PORT = process.env.PORT_LISTEN;

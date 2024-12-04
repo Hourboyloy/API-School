@@ -30,6 +30,29 @@ const deleteNews = async (req, res) => {
 
 const updateNews = async (req, res) => {
   try {
+    let myAddPhoto = req.files["addPhoto"];
+    let nullphotos = req.body.nullphotos || [];
+    if (!Array.isArray(nullphotos)) {
+      nullphotos = [nullphotos];
+    }
+
+    // If req.files["photos"] is not an array, make it one.
+    if (!Array.isArray(myAddPhoto)) {
+      myAddPhoto = [myAddPhoto];
+    }
+    nullphotos.forEach((i) => {
+      myAddPhoto.splice(i, 0, {
+        fieldname: "addPhoto",
+        originalname: "",
+        encoding: "",
+        mimetype: "image/jpeg",
+        destination: "",
+        filename: "",
+        path: "",
+        size: 0,
+      });
+    });
+
     const newsId = req.params.id;
     const { title, updatedAt, category, updateDescription } = req.body;
 
@@ -149,19 +172,22 @@ const updateNews = async (req, res) => {
 
     if (req.files && req.files.addPhoto) {
       // Case 1: Add photos with or without descriptions
-      for (let i = 0; i < req.files.addPhoto.length; i++) {
-        const photo = req.files.addPhoto[i];
+      for (let i = 0; i < myAddPhoto.length; i++) {
+        const photo = myAddPhoto[i];
         const description = descriptions[i] ? descriptions[i] : ""; // Use description if available, else empty
 
         // Upload photo to Cloudinary
-        const photoUpload = await cload.uploader.upload(photo.path, {
-          folder: "photo_news_of_projectschool",
-          public_id: `photo_news_of_projectschool_${sanitizedTitle}_photo_${Date.now()}`,
-        });
+        const photoUpload =
+          photo.filename !== ""
+            ? await cload.uploader.upload(photo.path, {
+                folder: "photo_news_of_projectschool",
+                public_id: `photo_news_of_projectschool_${sanitizedTitle}_photo_${Date.now()}`,
+              })
+            : "";
 
         news.photosDescription.push({
-          photo: photoUpload.secure_url,
-          photoCloudinaryId: photoUpload.public_id,
+          photo: photoUpload ? photoUpload.secure_url : "",
+          photoCloudinaryId: photoUpload ? photoUpload.public_id : "",
           description: description,
         });
       }
@@ -261,6 +287,28 @@ const getOne = async (req, res) => {
 
 const create = async (req, res) => {
   try {
+    let myPhoto = req.files["photos"];
+    let nullphotos = req.body.nullphotos || [];
+    if (!Array.isArray(nullphotos)) {
+      nullphotos = [nullphotos];
+    }
+    // If req.files["photos"] is not an array, make it one.
+    if (!Array.isArray(myPhoto)) {
+      myPhoto = [myPhoto];
+    }
+    nullphotos.forEach((i) => {
+      myPhoto.splice(i, 0, {
+        fieldname: "photos",
+        originalname: "",
+        encoding: "",
+        mimetype: "image/jpeg",
+        destination: "",
+        filename: "",
+        path: "",
+        size: 0,
+      });
+    });
+
     const { title, category } = req.body;
     let description = req.body.description || []; // Array of descriptions, if provided
 
@@ -289,17 +337,23 @@ const create = async (req, res) => {
       const photosDescription = [];
 
       // Loop through each file and upload to Cloudinary
-      for (let i = 0; i < req.files["photos"].length; i++) {
-        const file = req.files["photos"][i];
-        const photoUpload = await cload.uploader.upload(file.path, {
-          folder: "photo_news_of_projectschool",
-          public_id: `photo_news_of_projectschool_${sanitizedTitle}_photo_${Date.now()}`, // Unique public_id
-        });
+      for (let i = 0; i < myPhoto.length; i++) {
+        const file = myPhoto[i];
+        const photoUpload =
+          file.filename !== ""
+            ? await cload.uploader.upload(file.path, {
+                folder: "photo_news_of_projectschool",
+                public_id: `photo_news_of_projectschool_${sanitizedTitle}_photo_${Date.now()}`, // Unique public_id
+              })
+            : "";
 
         // Add each photo with details to the `photosDescription` array
         photosDescription.push({
-          public_id: `photo_news_of_projectschool/${sanitizedTitle}_photo_${Date.now()}`,
-          photo: photoUpload.secure_url,
+          public_id:
+            photoUpload !== ""
+              ? `photo_news_of_projectschool/${sanitizedTitle}_photo_${Date.now()}`
+              : "",
+          photo: photoUpload !== "" ? photoUpload.secure_url : "",
           description: description[i] || "", // Add corresponding description if provided
         });
       }
@@ -327,7 +381,7 @@ const create = async (req, res) => {
   }
 };
 
-const updateIsVisible = async (req, res) => {
+async function updateIsVisible(req, res) {
   const { id } = req.params; // Get the news item ID from the request parameters
   const { isVisible } = req.body; // Get the updated visibility status from the request body
   try {
@@ -360,7 +414,7 @@ const updateIsVisible = async (req, res) => {
     console.error("Error updating visibility:", error);
     res.status(500).json({ message: "Server error" });
   }
-};
+}
 
 const increaseViewer = async (req, res) => {
   const newsId = req.params.id;
@@ -387,13 +441,55 @@ const increaseViewer = async (req, res) => {
 };
 
 // handle work with commant
+// const addComment = async (req, res) => {
+//   try {
+//     const { newsId } = req.params; // Extract news ID from URL params
+//     const { userId, commentText, username } = req.body; // Extract userId and comment text from the request body
+//     if (!username || !userId || !commentText) {
+//       return;
+//     }
+//     // Find the news item by ID
+//     const news = await newsmodel.findById(newsId);
+//     if (!news) {
+//       return res.status(404).json({ message: "News item not found" });
+//     }
+//     // Add the comment to the comments array in the news document
+//     news.comments.push({
+//       userid: userId,
+//       username: username,
+//       comment: commentText,
+//       createdAt: new Date(),
+//     });
+
+//     // Save the updated news document
+//     await news.save();
+
+//     // Respond with success message
+//     res.status(200).json({
+//       message: "Comment added successfully",
+//       comment: {
+//         userid: userId,
+//         username: username,
+//         comment: commentText,
+//         createdAt: new Date(),
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Error adding comment:", error);
+//     res.status(500).json({ message: "Internal server error" });
+//   }
+// };
+
 const addComment = async (req, res) => {
   try {
     const { newsId } = req.params; // Extract news ID from URL params
     const { userId, commentText, username } = req.body; // Extract userId and comment text from the request body
+
+    // Validate required fields
     if (!username || !userId || !commentText) {
-      return;
+      return res.status(400).json({ message: "Missing required fields" });
     }
+
     // Find the news item by ID
     const news = await newsmodel.findById(newsId);
     if (!news) {
@@ -405,25 +501,25 @@ const addComment = async (req, res) => {
       userid: userId,
       username: username,
       comment: commentText,
-      createdAt: new Date(),
+      createdAt: new Date(), // Set the comment's created date
     });
 
     // Save the updated news document
     await news.save();
 
-    // Respond with success message
+    // Get the last inserted comment (the most recent one)
+    const lastComment = news.comments[news.comments.length - 1];
+
+    // Respond with success message and the last inserted comment
     res.status(200).json({
       message: "Comment added successfully",
-      comment: {
-        userid: userId,
-        username: username,
-        comment: commentText,
-        createdAt: new Date(),
-      },
+      comment: lastComment, // Return only the last inserted comment
     });
   } catch (error) {
     console.error("Error adding comment:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
   }
 };
 
@@ -432,13 +528,15 @@ const replyToComment = async (req, res) => {
     const newsId = req.params.newsId; // ID of the news item
     const commentId = req.params.commentId; // ID of the comment to reply to
     const { userId, replyText, username, replyToUsername } = req.body; // User replying and the reply text
+
+    // Validate required fields
+    if (!username || !userId || !newsId) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
     // Validate the userId
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({ message: "Invalid user ID" });
-    }
-
-    if (!username || !userId || !newsId) {
-      return;
     }
 
     // Validate the reply text
@@ -459,26 +557,85 @@ const replyToComment = async (req, res) => {
     }
 
     // Add the reply to the comment
-    comment.replies.push({
+    const newReply = {
       userid: userId,
       username: username,
-      replyToUsername: replyToUsername ? replyToUsername : "",
+      replyToUsername: replyToUsername || "", // If no replyToUsername, it will be an empty string
       comment: replyText,
       createdAt: new Date(),
-    });
+    };
+    comment.replies.push(newReply);
 
     // Save the updated news document
     await news.save();
 
+    // Find and return the updated comment with its replies
+    const updatedComment = news.comments.id(commentId); // Retrieve the updated comment
     res.status(200).json({
       message: "Reply added successfully",
-      comment: comment, // Return the updated comment with the new reply
+      comment: updatedComment, // Return the updated comment with replies
     });
   } catch (error) {
     console.error("Error replying to comment:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
   }
 };
+
+
+// const replyToComment = async (req, res) => {
+//   try {
+//     const newsId = req.params.newsId; // ID of the news item
+//     const commentId = req.params.commentId; // ID of the comment to reply to
+//     const { userId, replyText, username, replyToUsername } = req.body; // User replying and the reply text
+//     // Validate the userId
+//     if (!mongoose.Types.ObjectId.isValid(userId)) {
+//       return res.status(400).json({ message: "Invalid user ID" });
+//     }
+
+//     if (!username || !userId || !newsId) {
+//       return;
+//     }
+
+//     // Validate the reply text
+//     if (!replyText || replyText.trim() === "") {
+//       return res.status(400).json({ message: "Reply text cannot be empty" });
+//     }
+
+//     // Find the news item by ID
+//     const news = await newsmodel.findById(newsId);
+//     if (!news) {
+//       return res.status(404).json({ message: "News item not found" });
+//     }
+
+//     // Find the comment within the news item
+//     const comment = news.comments.id(commentId);
+//     if (!comment) {
+//       return res.status(404).json({ message: "Comment not found" });
+//     }
+
+//     // Add the reply to the comment
+//     comment.replies.push({
+//       userid: userId,
+//       username: username,
+//       replyToUsername: replyToUsername ? replyToUsername : "",
+//       comment: replyText,
+//       createdAt: new Date(),
+//     });
+
+//     // Save the updated news document
+//     await news.save();
+
+//     res.status(200).json({
+//       message: "Reply added successfully",
+//       comment: comment, // Return the updated comment with the new reply
+//     });
+//   } catch (error) {
+//     console.error("Error replying to comment:", error);
+//     res.status(500).json({ message: "Internal server error" });
+//   }
+// };
 
 const likeOrDislikeComment = async (req, res) => {
   try {
@@ -723,6 +880,106 @@ const removeReply = async (req, res) => {
   }
 };
 
+const editComment = async (req, res) => {
+  try {
+    const { newsId, commentId } = req.params; // Extract news ID and comment ID from URL params
+    const { userId, newCommentText } = req.body; // Extract user ID and the new comment text
+
+    // Validate input
+    if (!newCommentText || newCommentText.trim() === "") {
+      return res.status(400).json({ message: "Comment text cannot be empty" });
+    }
+
+    // Find the news item by ID
+    const news = await newsmodel.findById(newsId);
+    if (!news) {
+      return res.status(404).json({ message: "News item not found" });
+    }
+
+    // Find the comment within the news item
+    const comment = news.comments.id(commentId);
+    if (!comment) {
+      return res.status(404).json({ message: "Comment not found" });
+    }
+
+    // Check if the user is authorized to edit the comment
+    if (comment.userid !== userId) {
+      return res
+        .status(403)
+        .json({ message: "Unauthorized to edit this comment" });
+    }
+
+    // Update the comment text
+    comment.comment = newCommentText;
+    comment.updatedAt = new Date();
+
+    // Save the updated news document
+    await news.save();
+
+    res.status(200).json({
+      message: "Comment updated successfully",
+      comment,
+    });
+  } catch (error) {
+    console.error("Error editing comment:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const editReply = async (req, res) => {
+  try {
+    const { newsId, commentId, replyId } = req.params; // Extract news ID, comment ID, and reply ID from URL params
+    const { userId, newReplyText } = req.body; // Extract user ID and the new reply text
+
+    // Validate input
+    if (!newReplyText || newReplyText.trim() === "") {
+      return res.status(400).json({ message: "Reply text cannot be empty" });
+    }
+
+    // Find the news item by ID
+    const news = await newsmodel.findById(newsId);
+    if (!news) {
+      return res.status(404).json({ message: "News item not found" });
+    }
+
+    // Find the comment within the news item
+    const comment = news.comments.id(commentId);
+    if (!comment) {
+      return res.status(404).json({ message: "Comment not found" });
+    }
+
+    // Find the reply within the comment
+    const reply = comment.replies.id(replyId);
+    if (!reply) {
+      return res.status(404).json({ message: "Reply not found" });
+    }
+
+    // Check if the user is authorized to edit the reply
+    if (reply.userid !== userId) {
+      return res
+        .status(403)
+        .json({ message: "Unauthorized to edit this reply" });
+    }
+
+    // Update the reply text
+    reply.comment = newReplyText;
+    reply.updatedAt = new Date();
+
+    // Save the updated news document
+    await news.save();
+
+    res.status(200).json({
+      message: "Reply updated successfully",
+      reply,
+    });
+  } catch (error) {
+    console.error("Error editing reply:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+
+
 module.exports = {
   increaseViewer,
   deleteNews,
@@ -739,4 +996,6 @@ module.exports = {
   likeOrDislikeReply,
   removeComment,
   removeReply,
+  editComment,
+  editReply,
 };

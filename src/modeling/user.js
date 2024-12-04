@@ -19,6 +19,7 @@ const usermodel = mongoose.Schema({
   },
   role: {
     type: String,
+    default:""
   },
   createdAt: {
     type: Date,

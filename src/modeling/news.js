@@ -19,7 +19,7 @@ const newsmodel = mongoose.Schema({
       description: {
         type: String,
         trim: true,
-        maxlength: [1000, "Text cannot be more than 500 characters long"],
+        maxlength: [5000, "Text cannot be more than 500 characters long"],
         default: "",
       },
     },
@@ -62,7 +62,7 @@ const newsmodel = mongoose.Schema({
         {
           userid: { type: mongoose.Schema.Types.ObjectId, ref: "users" }, // Reference to users collection
           username: { type: String, trim: true, required: true }, // Username of the replier
-          replyToUsername: { type: String, trim: true, default:"" }, // Username of the user being replied to
+          replyToUsername: { type: String, trim: true, default: "" }, // Username of the user being replied to
           comment: { type: String, trim: true },
           like: [
             {

@@ -28,14 +28,32 @@ const news_route = (app) => {
 
   // commants
   app.post("/api/news/:newsId/comments", handle.addComment);
-  app.post("/api/news/:newsId/comments/:commentId/reply", handle.replyToComment);
-  // action
-  app.post("/api/news/:newsId/comments/:commentId/like-dislike", handle.likeOrDislikeComment);
-  app.post("/api/news/:newsId/comments/:commentId/replies/:replyId/like-dislike", handle.likeOrDislikeReply);
+
+  app.post(
+    "/api/news/:newsId/comments/:commentId/reply",
+    handle.replyToComment
+  );
   
+  // action
+  app.post(
+    "/api/news/:newsId/comments/:commentId/like-dislike",
+    handle.likeOrDislikeComment
+  );
+  app.post(
+    "/api/news/:newsId/comments/:commentId/replies/:replyId/like-dislike",
+    handle.likeOrDislikeReply
+  );
+
   // remove
   app.delete("/api/news/:newsId/comment/:commentId", handle.removeComment);
-  app.delete("/api/news/:newsId/comment/:commentId/reply/:replyId", handle.removeReply);
+  
+  app.delete(
+    "/api/news/:newsId/comment/:commentId/reply/:replyId",
+    handle.removeReply
+  );
+
+  app.put("/news/:newsId/comment/:commentId", handle.editComment);
+  app.put("/news/:newsId/comment/:commentId/replies/:replyId", handle.editReply);
 
 };
 
